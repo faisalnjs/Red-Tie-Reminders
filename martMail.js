@@ -66,19 +66,27 @@ async function martMail() {
             const communicationAuthor = communicationDOM.window.document.querySelector('.site-title .navbar-brand')?.textContent.replace(/\s+/g, ' ').trim();
             if (!communicationAuthor.includes('Schmidt')) continue;
             const communicationTitle = communicationDOM.window.document.querySelector('.field--name-title')?.textContent.trim();
+            const communicationLinks = [];
             const communicationSections = Array.from(communicationDOM.window.document.querySelector('.text-formatted').children).flatMap(communicationSection => Array.from(communicationSection.innerHTML.split('<br><br>')).map(sectionHTML => {
                 const section = new JSDOM(`<!DOCTYPE html>${sectionHTML}`).window.document;
                 var content = '';
                 switch (communicationSection.tagName.toLowerCase()) {
                     case 'ul':
-                        content = Array.from(section.querySelectorAll('li')).map(li => `* ${li.textContent.trim()}`).join('\n').trim();
+                        htmlContent = Array.from(section.querySelectorAll('li')).map(li => `* ${li.innerHTML.trim()}`).join('\n').trim();
+                        content = Array.from(section.querySelectorAll('li')).map(li => `* ${new JSDOM(`<!DOCTYPE html>${li.innerHTML}`).window.document.body.textContent.trim()}`).join('\n').trim();
                         break;
                     case 'ol':
-                        content = Array.from(section.querySelectorAll('li')).map((li, j) => `${j + 1}. ${li.textContent.trim()}`).join('\n').trim();
+                        htmlContent = Array.from(section.querySelectorAll('li')).map(li => `${j + 1}. ${li.innerHTML.trim()}`).join('\n').trim();
+                        content = Array.from(section.querySelectorAll('li')).map((li, j) => `${j + 1}. ${new JSDOM(`<!DOCTYPE html>${li.innerHTML}`).window.document.body.textContent.trim()}`).join('\n').trim();
                         break;
                     default:
+                        htmlContent = section.body.innerHTML.replaceAll('<br>', '\n').trim();
                         content = new JSDOM(`<!DOCTYPE html>${((section.querySelector('span:has(strong)') && (section.querySelector('span:has(strong)').textContent.length < 50)) ? new JSDOM(`<!DOCTYPE html>${sectionHTML.split(section.querySelector('span:has(strong)').outerHTML)[1]}`).window.document : section).body.innerHTML.replaceAll('<br>', '\n')}`).window.document.body.textContent.trim();
                         break;
+                };
+                for (const [, url, innerHtml] of htmlContent.matchAll(/<a\s+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)) {
+                    const text = innerHtml.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+                    if (url.trim().length <= 512) communicationLinks.push({ text, url: url.trim() });
                 };
                 return {
                     heading: (section.querySelector('span:has(strong)') && (section.querySelector('span:has(strong)').textContent.length < 50)) ? section.querySelector('span:has(strong)').textContent.trim() : null,
@@ -162,8 +170,29 @@ async function martMail() {
                                     "name": "📃"
                                 },
                                 "url": `${process.env.DOMAIN}${communicationURL}`
-                            }
+                            },
+                            ...communicationLinks.slice(0, 3).map(link => ({
+                                "type": 2,
+                                "style": 5,
+                                "label": link.text.length > 80 ? `${link.text.substring(0, 77)}...` : link.text,
+                                "emoji": {
+                                    "name": "🔗"
+                                },
+                                "url": link.url
+                            }))
                         ],
+                        ...(communicationLinks.length > 3) ? communicationLinks.slice(3).reduce((r, v, i) => ((i % 5) ? r[r.length - 1].push(v) : r.push([v]), r), []).map(linkGroup => ({
+                            "type": 1,
+                            "components": linkGroup.map(link => ({
+                                "type": 2,
+                                "style": 5,
+                                "label": link.text.length > 80 ? `${link.text.substring(0, 77)}...` : link.text,
+                                "emoji": {
+                                    "name": "🔗"
+                                },
+                                "url": link.url
+                            }))
+                        })) : [],
                         "accessory": {
                             "type": 11,
                             "media": {
