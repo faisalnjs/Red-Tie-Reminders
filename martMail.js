@@ -1,4 +1,4 @@
-require('node:process').loadEnvFile();
+require('node:process').loadEnvFile('./.env');
 const fs = require('fs').promises;
 const path = require('path');
 const { JSDOM } = require('jsdom');
