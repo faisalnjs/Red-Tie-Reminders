@@ -62,7 +62,7 @@ async function martMail() {
             const communicationText = await communicationHTML.text();
             const communicationDOM = new JSDOM(communicationText);
             const communicationColor = communicationDOM.window.document.querySelector('meta[name="msapplication-TileColor"]')?.getAttribute('content')?.trim();
-            const communicationImage = communicationDOM.window.document.querySelector('.navbar-brand img')?.src;
+            const communicationImage = communicationDOM.window.document.querySelector('link[rel="mask-icon"]')?.href;
             const communicationAuthor = communicationDOM.window.document.querySelector('.site-title .navbar-brand')?.textContent.replace(/\s+/g, ' ').trim();
             if (!communicationAuthor.includes('Schmidt')) continue;
             const communicationTitle = communicationDOM.window.document.querySelector('.field--name-title')?.textContent.trim();
@@ -87,7 +87,7 @@ async function martMail() {
                 };
                 for (const [, url, innerHtml] of htmlContent.matchAll(/<a\s+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)) {
                     const text = innerHtml.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-                    if (url.trim().length <= 512) communicationLinks.push({ text, url: url.trim(), type: 'link' });
+                    if (url.trim().length <= 512) communicationLinks.push({ text, url: url.trim().replaceAll('mailto:', 'https://faisaln.com/martmail/'), type: url.includes('mailto') ? 'email' : 'link' });
                 };
                 if (sectionHTML.includes('<iframe')) {
                     for (const [, src] of sectionHTML.matchAll(/<iframe\s+[^>]*src="([^"]+)"[^>]*>/gi)) {
@@ -201,7 +201,7 @@ async function martMail() {
                                 "style": 5,
                                 "label": link.text.includes('http') ? "Open link" : ((link.text.length > 80) ? `${link.text.substring(0, 77)}...` : link.text),
                                 "emoji": {
-                                    "name": (link.type === 'video') ? "📺" : "🔗"
+                                    "name": (link.type === 'email') ? "✉️" : ((link.type === 'video') ? "📺" : "🔗")
                                 },
                                 "url": link.url
                             }))
@@ -213,7 +213,7 @@ async function martMail() {
                                 "style": 5,
                                 "label": link.text.includes('http') ? "Open link" : ((link.text.length > 80) ? `${link.text.substring(0, 77)}...` : link.text),
                                 "emoji": {
-                                    "name": (link.type === 'video') ? "📺" : "🔗"
+                                    "name": (link.type === 'email') ? "✉️" : ((link.type === 'video') ? "📺" : "🔗")
                                 },
                                 "url": link.url
                             }))
