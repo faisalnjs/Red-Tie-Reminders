@@ -88,7 +88,7 @@ async function martMail() {
                 };
                 for (const [, url, innerHtml] of htmlContent.matchAll(/<a\s+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)) {
                     const text = innerHtml.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-                    if (url.trim().length <= 512) communicationLinks.push(text.trim().endsWith('@rpi.edu') ? { text, url: `https://faisaln.com/martmail/${text}`, type: 'email' } : { text, url: url.trim().replaceAll('mailto:', 'https://faisaln.com/martmail/'), type: url.includes('mailto') ? 'email' : 'link' });
+                    if (url.trim().length <= 512) communicationLinks.push(text.trim().endsWith('@rpi.edu') ? { text, url: `https://faisaln.com/scripts/mart-mail/${text}`, type: 'email' } : { text, url: url.trim().replaceAll('mailto:', 'https://faisaln.com/scripts/mart-mail/'), type: url.includes('mailto') ? 'email' : 'link' });
                 };
                 if (sectionHTML.includes('<iframe')) {
                     for (const [, src] of sectionHTML.matchAll(/<iframe\s+[^>]*src="([^"]+)"[^>]*>/gi)) {
@@ -140,7 +140,7 @@ async function martMail() {
                     url: process.env.DOMAIN,
                     icon_url: 'https://faisaln.com/Marty-Schmidt.png',
                 },
-                title: `Incoming Mail #${total - communicationsArray.indexOf(communicationItem)}: ${communicationTitle}`,
+                title: `${process.env.DISCORD_EMOJI ? `${process.env.DISCORD_EMOJI} ` : ''}Incoming Mail #${total - communicationsArray.indexOf(communicationItem)}: ${communicationTitle}`,
                 thumbnail: { url: `${process.env.DOMAIN}${communicationImage}` },
                 url: `${process.env.DOMAIN}${communicationURL}`,
                 footer: {
@@ -148,7 +148,6 @@ async function martMail() {
                     icon_url: 'https://faisaln.com/Mart-Mail.png',
                 },
                 timestamp: new Date(communicationDateTime).toISOString(),
-                description: 'Rejoice fellow Schmidtizens! Our beloved president has bestowed on us yet another mailed announcement! His priceless words are affixed:\n\n--------------------------',
                 fields: [],
             };
             for (let k = 0; k < communicationSections.length; k++) {
@@ -182,12 +181,23 @@ async function martMail() {
             await sendWebhook({
                 "username": "Mart Mail",
                 "avatar_url": "https://faisaln.com/Mart-Mail.png",
-                "content": `<@${process.env.DISCORD_ROLE_ID}> New Mart Mail received!`,
+                "content": `${process.env.DISCORD_ROLE ? `${process.env.DISCORD_ROLE} ` : ''}Rejoice fellow Schmidtizens! Our beloved president has bestowed on us yet another mailed announcement! His priceless words are affixed:`,
                 "embeds": embeds,
                 "components": [
                     {
                         "type": 1,
                         "components": [
+                            {
+                                "type": 2,
+                                "style": 5,
+                                "emoji": process.env.DISCORD_EMOJI ? {
+                                    "id": process.env.DISCORD_EMOJI.split(':')[2].replace('>', ''),
+                                    "name": process.env.DISCORD_EMOJI.split(':')[1]
+                                } : {
+                                    "name": "🧑‍💻"
+                                },
+                                "url": "https://faisaln.com/scripts/mart-mail"
+                            },
                             {
                                 "type": 2,
                                 "style": 5,
@@ -205,36 +215,21 @@ async function martMail() {
                                     "name": "📃"
                                 },
                                 "url": `${process.env.DOMAIN}${communicationURL}`
-                            },
-                            ...communicationLinks.slice(0, 3).map(link => ({
-                                "type": 2,
-                                "style": 5,
-                                "label": link.text.includes('http') ? "Open link" : ((link.text.length > 80) ? `${link.text.substring(0, 77)}...` : link.text),
-                                "emoji": {
-                                    "name": (link.type === 'email') ? "✉️" : ((link.type === 'video') ? "📺" : "🔗")
-                                },
-                                "url": link.url
-                            }))
-                        ],
-                        ...(communicationLinks.length > 3) ? communicationLinks.slice(3).reduce((r, v, i) => ((i % 5) ? r[r.length - 1].push(v) : r.push([v]), r), []).map(linkGroup => ({
-                            "type": 1,
-                            "components": linkGroup.map(link => ({
-                                "type": 2,
-                                "style": 5,
-                                "label": link.text.includes('http') ? "Open link" : ((link.text.length > 80) ? `${link.text.substring(0, 77)}...` : link.text),
-                                "emoji": {
-                                    "name": (link.type === 'email') ? "✉️" : ((link.type === 'video') ? "📺" : "🔗")
-                                },
-                                "url": link.url
-                            }))
-                        })) : [],
-                        "accessory": {
-                            "type": 11,
-                            "media": {
-                                "url": `${process.env.DOMAIN}${communicationImage}`
                             }
-                        }
+                        ],
                     },
+                    ...communicationLinks.reduce((r, v, i) => ((i % 5) ? r[r.length - 1].push(v) : r.push([v]), r), []).map(linkGroup => ({
+                        "type": 1,
+                        "components": linkGroup.map(link => ({
+                            "type": 2,
+                            "style": 5,
+                            "label": link.text.includes('http') ? "Open link" : ((link.text.length > 80) ? `${link.text.substring(0, 77)}...` : link.text),
+                            "emoji": {
+                                "name": (link.type === 'email') ? "✉️" : ((link.type === 'video') ? "📺" : "🔗")
+                            },
+                            "url": link.url
+                        }))
+                    }))
                 ],
                 "attachments": []
             });
