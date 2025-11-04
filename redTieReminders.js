@@ -51,7 +51,7 @@ async function redTieReminders() {
                 title: `${process.env.DISCORD_EMOJI ? `${process.env.DISCORD_EMOJI} ` : ''}Wear your red tie tomorrow!`,
                 description: `This is your weekly reminder to wear your red tie tomorrow for Red Tie Tuesday!`,
                 footer: {
-                    text: `Red Tie Reminders v${package.version} • ${martStats.totalSent + 1} Red Tie Reminders${((martStats.totalSent + 1) > 1) ? 's' : ''} Sent`,
+                    text: `Red Tie Reminders v${package.version} • ${martStats.totalSent + 1} Red Tie Reminder${((martStats.totalSent + 1) > 1) ? 's' : ''} Sent`,
                     icon_url: 'https://faisaln.com/Red-Tie-Reminders.png',
                 },
                 timestamp: lastSentDateSent.toISOString(),
