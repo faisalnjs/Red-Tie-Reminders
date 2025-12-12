@@ -3,6 +3,7 @@ require('node:process').loadEnvFile(path.join(__dirname, '.env'));
 const fs = require('fs').promises;
 var package = require('./package.json');
 var martStats = require('./martStats.json');
+var stopRanges = require('./stopRanges.json');
 
 async function updateMartStats(field, value) {
     const file = path.resolve(__dirname, 'martStats.json');
@@ -42,6 +43,15 @@ async function sendWebhook(params) {
 async function redTieReminders() {
     try {
         if (new Date(martStats.lastSent).toDateString() === new Date().toDateString()) return;
+        const today = new Date();
+        for (const range of stopRanges) {
+            const [start, end] = range.split('-');
+            const [startMonth, startDate] = start.split('/').map(Number);
+            const [endMonth, endDate] = end.split('/').map(Number);
+            const startObj = new Date(today.getFullYear(), startMonth - 1, startDate);
+            const endObj = new Date(today.getFullYear(), endMonth - 1, endDate);
+            if ((today >= startObj) && (today <= endObj)) return;
+        };
         lastSentDateSent = new Date();
         await sendWebhook({
             "username": "Red Tie Reminders",
