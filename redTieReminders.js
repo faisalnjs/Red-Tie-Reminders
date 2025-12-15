@@ -48,9 +48,13 @@ async function redTieReminders() {
             const [start, end] = range.split('-');
             const [startMonth, startDate] = start.split('/').map(Number);
             const [endMonth, endDate] = end.split('/').map(Number);
-            const startObj = new Date(today.getFullYear(), startMonth - 1, startDate);
-            const endObj = new Date(today.getFullYear(), endMonth - 1, endDate);
-            if ((today >= startObj) && (today <= endObj)) return;
+            const wrap = (startMonth > endMonth) || (startMonth === endMonth && startDate > endDate);
+            var startYear = today.getFullYear();
+            if (wrap && (today.getMonth() + 1) < startMonth) startYear -= 1;
+            const endYear = wrap ? startYear + 1 : startYear;
+            const startObj = new Date(startYear, startMonth - 1, startDate);
+            const endObj = new Date(endYear, endMonth - 1, endDate, 23, 59, 59, 999);
+            if (today >= startObj && today <= endObj) return;
         };
         lastSentDateSent = new Date();
         await sendWebhook({
